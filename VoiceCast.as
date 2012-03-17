@@ -13,6 +13,7 @@ package {
 	import flash.utils.getTimer;
   import flash.media.Microphone;    
   import flash.media.SoundCodec;
+  import flash.utils.*;
 
 	public class VoiceCast extends Sprite {
 		private var netConnection:NetConnection;
@@ -24,14 +25,15 @@ package {
 
     private var rtmfpServerUri:String = 'rtmfp://p2p.rtmfp.net/d50e06cd29e27d62167444cd-b7f858253166/';
     private var groupName:String = 'test_cast';
-    private var streamName:String = 'voice_cast';
+    private var myStreamName:String = '';
+
+    private var receivers:Object = new Object();
 
     public function VoiceCast () {
       Security.allowDomain('*');
-      //log('OK1');
       ExternalInterface.addCallback('connect', connect);
       ExternalInterface.addCallback('startPublish', startPublish);
-      //connect();
+      connect();
     }
 
     public function connect ():void {
@@ -50,7 +52,9 @@ package {
       groupSpec = new GroupSpecifier(groupName);
       groupSpec.multicastEnabled = true;
       groupSpec.serverChannelEnabled = true;
-      
+      groupSpec.objectReplicationEnabled = true;
+      groupSpec.postingEnabled = true;
+
       netGroup = new NetGroup(
         netConnection, groupSpec.toString());
       netGroup.addEventListener(
@@ -58,22 +62,55 @@ package {
     }
 
     private function startPublish ():void {
+      myStreamName = (new Date).toString();
+      log(myStreamName);
+      
       publishStream = new NetStream(
         netConnection, groupSpec.toString());
       publishStream.addEventListener(
         NetStatusEvent.NET_STATUS, netStatusHandler);      
       mic = Microphone.getMicrophone();
-      //mic.codec = SoundCodec.PCMU;
+      mic.codec = SoundCodec.SPEEX;
+      mic.framesPerPacket = 1;
+      mic.encodeQuality = 7;
+      mic.setSilenceLevel(0);
+      //publishStream.audioReliable = true;
       publishStream.attachAudio(Microphone.getMicrophone());
-      publishStream.publish(streamName);
+      publishStream.publish(myStreamName);
+
+      netGroup.post(myStreamName);
+      setInterval(function ():void {
+          netGroup.post(myStreamName);
+        }, 30000);
     }
 
     private function onNetGroupConnect (group:Object):void {
-      receiveStream = new NetStream(
-        netConnection, groupSpec.toString());
-      receiveStream.addEventListener(
-        NetStatusEvent.NET_STATUS, netStatusHandler);
-      receiveStream.play(streamName);
+      setTimeout(function ():void {
+          log('request');
+          netGroup.post('tell me who are casting!' + (new Date).toString());
+        }, 1000);
+    }
+
+    private function onCastersChange (streamName:String):void {
+      if (!(streamName in receivers)) {
+        receivers[streamName] = new NetStream(
+          netConnection, groupSpec.toString());
+        receivers[streamName].addEventListener(
+          NetStatusEvent.NET_STATUS, netStatusHandler);
+        receivers[streamName].play(streamName);
+      }
+    }
+
+    private function onMessage (message:String):void {
+      log(message);
+      if (message.indexOf('tell') >= 0) {
+        if (myStreamName.length > 0) {
+          log('told');
+          netGroup.post(myStreamName);
+        }
+      } else {
+        onCastersChange(message);
+      }
     }
 
     private function netStatusHandler (event:NetStatusEvent):void {
@@ -100,8 +137,11 @@ package {
         // TODO: disconnected
 				break;
 
-        case "NetStream.Publish.Start":
-        
+        case "NetStream.Publish.Start":        
+        break;
+
+        case "NetGroup.Posting.Notify":
+        onMessage(event.info.message);
         break;
       }
     }
