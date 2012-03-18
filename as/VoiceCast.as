@@ -23,8 +23,8 @@ package {
 		private var receiveStream:NetStream;
     private var mic:Microphone;
 
-    private var rtmfpServerUri:String = 'rtmfp://p2p.rtmfp.net/d50e06cd29e27d62167444cd-b7f858253166/';
-    private var groupName:String = 'test_cast';
+    private var rtmfpServerUri:String;
+    private var groupName:String;
     private var myStreamName:String = '';
 
     private var receivers:Object = new Object();
@@ -33,14 +33,11 @@ package {
       Security.allowDomain('*');
       ExternalInterface.addCallback('connect', connect);
       ExternalInterface.addCallback('startPublish', startPublish);
-      connect();
     }
 
-    public function connect ():void {
-      if (netConnection) {
-        netConnection.close();
-        netConnection = null;
-      }
+    public function connect (uri:String, _groupName:String):void {
+      rtmfpServerUri = uri;
+      groupName = _groupName;
 
       netConnection = new NetConnection();
       netConnection.addEventListener(
