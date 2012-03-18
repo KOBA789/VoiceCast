@@ -33,6 +33,7 @@ package {
       Security.allowDomain('*');
       ExternalInterface.addCallback('connect', connect);
       ExternalInterface.addCallback('startPublish', startPublish);
+      ExternalInterface.call('VoiceCastHandler', 'ready');
     }
 
     public function connect (uri:String, _groupName:String):void {
@@ -120,6 +121,7 @@ package {
 
     private function netStatusHandler (event:NetStatusEvent):void {
       log(event.info.code);
+      ExternalInterface.call('VoiceCastHandler', event.info.code);
       switch (event.info.code) {
         case "NetConnection.Connect.Success":
         onNetConnectionConnect();

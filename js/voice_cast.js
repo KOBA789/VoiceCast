@@ -2,30 +2,32 @@ var util = require("util");
 var EventEmitter = require('events').EventEmitter;
 
 window.VoiceCastHandler = function (eventName, arg) {
+  console.log(eventName);
   if (window.VoiceCastInstance) {
     window.VoiceCastInstance.emit(eventName, arg);
   }
 };
 
 var VoiceCast = (function () {
-  function VoiceCast (elementId, width, height, swf) {
+  function VoiceCast (elementId, width, height, swfFile) {
     if (typeof width === 'string') {
-      swf = width;
-      width = null;
+      swfFile = width;
+      width = undefined;
     }
-    if (elementId === null) { elementId = 'voice-cast'; }
-    if (width     === null) { width     = 215; }
-    if (height    === null) { height    = 138; }
-    if (swf       === null) { swf       = 'voice_cast.swf'; }
+    if (elementId === undefined) { elementId = 'voice-cast'; }
+    if (width     === undefined) { width     = 215; }
+    if (height    === undefined) { height    = 138; }
+    if (swfFile   === undefined) { swfFile   = 'voice_cast.swf'; }
 
     var params = {
       wmode: "transparent",
       allowscriptaccess: "sameDomain"
     };
 
-    this.swf = swfobject.embedSWF(
-      swf, elementId, width.toString(), height.toString(),
-      'expressInstall.swf', params);
+    swfobject.embedSWF(
+      swfFile, elementId, width.toString(), height.toString(),
+      '10.1', 'expressInstall.swf', null, params);
+    this.swf = swfobject.getObjectById(elementId);
     window.VoiceCastInstance = this;
   }
 
@@ -48,4 +50,6 @@ var VoiceCast = (function () {
   };
 
   return VoiceCast;
-});
+})();
+
+module.exports = VoiceCast;
