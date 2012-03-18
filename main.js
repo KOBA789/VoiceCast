@@ -9,5 +9,5 @@ var params = {
 
 swfobject.embedSWF("VoiceCast.swf",
                    "voice-cast",
-                   "300", "300", "10.1.0",
+                   "215", "138", "10.1.0",
                    "expressInstall.swf", params);
