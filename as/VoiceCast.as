@@ -45,6 +45,10 @@ package {
       netConnection.connect(rtmfpServerUri);
     }
 
+    public function close ():void {
+      netConnection.close();
+    }
+
     private function onNetConnectionConnect ():void {
       groupSpec = new GroupSpecifier(groupName);
       groupSpec.multicastEnabled = true;
@@ -79,6 +83,10 @@ package {
       setInterval(function ():void {
           netGroup.post(myStreamName);
         }, 30000);
+    }
+
+    private function stopPublish ():void {
+      publishStream = null;
     }
 
     private function onNetGroupConnect (group:Object):void {
